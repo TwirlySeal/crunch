@@ -1,71 +1,32 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"github.com/aep/feistel"
-	"github.com/thanhpk/randstr"
+	"math/bits"
+	"math/rand"
 )
 
+func permute(num uint32, seeds [16]uint32) uint32 {
+	for i := 0; i < len(seeds); i++ {
+		num ^= seeds[i]
+		num = bits.RotateLeft32(num, 9)
+		i++
+		num += seeds[i]
+		num = bits.RotateLeft32(num, 21)
+		num ^= num >> 17
+		num = bits.RotateLeft32(num, 13)
+	}
+	return num
+}
+
 func main() {
-	const termSize = 99
-	var max uint32 = termSize * termSize * 4
+	var seeds [16]uint32
+	for i := range seeds {
+		seeds[i] = rand.Uint32()
+	}
 
-	for i := range max {
-		num := feistel.Map(i, max, randstr.String(10))
-		op := num % 4
-		num /= 4
-
-		term2 := (num % termSize) + 1
-		term1 := (num / termSize) + 1
-
-		var opStr string
-		switch op {
-			case 0:
-				opStr = "+"
-			case 1:
-				opStr = "-"
-			case 2:
-				opStr = "*"
-			case 3:
-				opStr = "/"
-		}
-
-		fmt.Printf("%d %s %d = ", term1, opStr, term2)
-
-		scanner := bufio.NewScanner(os.Stdin)
-		if scanner.Scan() {
-			num1 := float32(term1)
-			num2 := float32(term2)
-
-			var answer float32
-			switch op {
-				case 0:
-					answer = num1 + num2
-				case 1:
-					answer = num1 - num2
-				case 2:
-					answer = num1 * num2
-				case 3:
-					answer = num1 / num2
-			}
-
-			var correct bool = false
-			input, err := strconv.ParseFloat(scanner.Text(), 32)
-			if err == nil {
-				correct = float32(input) == answer
-			}
-
-			fmt.Println(correct)
-			fmt.Println(answer)
-		}
-
-		if err := scanner.Err(); err != nil {
-			// todo: format error
-			log.Fatalln(err)
-		}
+	// test with first 10 uint32 values
+	for num := uint32(0); num < 10; num++ {
+		fmt.Println(permute(num, seeds))
 	}
 }
